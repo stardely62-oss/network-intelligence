@@ -184,7 +184,13 @@ function ProbePanel({ sessionId }: { sessionId: string }) {
         смогло подключиться, и наоборот.
       </Notice>
       <div className="mt-3 flex flex-wrap items-end gap-2">
-        <Segmented value={kind} onChange={setKind} options={[{ value: "dns", label: "DNS" }, { value: "tcp", label: "TCP" }, { value: "udp", label: "UDP" }]} />
+        <Segmented
+          value={kind}
+          onChange={(k) => {
+            setKind(k);
+            if (k === "tcp" && timeout === "1000") setTimeoutMs("3000");
+          }}
+          options={[{ value: "dns", label: "DNS" }, { value: "tcp", label: "TCP" }, { value: "udp", label: "UDP" }]} />
         <div className="flex flex-col">
           <label className="mb-1 text-2xs text-faint">Цель (имя или один IP)</label>
           <Input value={target} onChange={(e) => setTarget(e.target.value)} placeholder="discord.com или 162.159.130.234" className="w-64 font-mono" list="observed-ips" />
@@ -205,7 +211,7 @@ function ProbePanel({ sessionId }: { sessionId: string }) {
         <div className="flex flex-col">
           <label className="mb-1 text-2xs text-faint">Тайм-аут</label>
           <Select value={timeout} onChange={setTimeoutMs}>
-            {["1000", "3000", "5000", "10000"].map((t) => (
+            {(kind === "tcp" ? ["3000", "5000", "10000"] : ["1000", "3000", "5000", "10000"]).map((t) => (
               <option key={t} value={t}>
                 {Number(t) / 1000} с
               </option>

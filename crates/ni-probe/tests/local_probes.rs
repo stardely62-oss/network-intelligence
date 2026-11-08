@@ -31,15 +31,21 @@ fn tcp_connect_succeeds_ipv4_and_ipv6() {
     }
 }
 
+/// Windows answers a refused SYN only after its own SYN retransmissions
+/// (about 2 s on loopback), so the probe needs a timeout well above that to
+/// classify a closed port correctly. Linux refuses immediately.
 #[test]
 fn tcp_closed_port_is_refused_not_timeout() {
     let a = support::closed_tcp_port("127.0.0.1:0");
-    let r = tcp::connect_once(a.ip(), a.port(), T);
+    let r = tcp::connect_once(a.ip(), a.port(), Duration::from_secs(5));
     match &r.outcome {
-        TcpOutcome::Refused { error, .. } => assert!(
-            error.name.as_deref().unwrap_or("").contains("CONNREFUSED"),
-            "{error:?}"
-        ),
+        TcpOutcome::Refused { error, elapsed_ms } => {
+            eprintln!("refused after {elapsed_ms} ms");
+            assert!(
+                error.name.as_deref().unwrap_or("").contains("CONNREFUSED"),
+                "{error:?}"
+            )
+        }
         o => panic!("expected refused, got {o:?}"),
     }
 }

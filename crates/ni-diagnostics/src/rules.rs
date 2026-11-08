@@ -323,7 +323,8 @@ impl Rule for ProbeTcp {
                         ],
                         Confidence::Medium,
                     )),
-                    TcpOutcome::TimedOut { timeout_ms } => out.push(base(
+                    TcpOutcome::TimedOut { timeout_ms } => out.push({
+                        let mut f = base(
                         Severity::Warning,
                         format!("{s}: нет ответа за {timeout_ms} мс"),
                         format!("TCP-проверка {target} → {s}: рукопожатие не завершилось за {timeout_ms} мс."),
@@ -333,7 +334,12 @@ impl Rule for ProbeTcp {
                         ],
                         vec!["Сервер выключен или перегружен.".into(), "Локальный брандмауэр.".into(), "Слишком короткий тайм-аут для этой сети.".into()],
                         Confidence::Low,
-                    )),
+                        );
+                        if *timeout_ms < 3000 {
+                            f.limitations.push("Тайм-аут меньше 3 с: Windows сообщает об отказе (RST) только после повторных SYN, примерно через 2 с, поэтому закрытый порт мог быть принят за отсутствие ответа.".into());
+                        }
+                        f
+                    }),
                     TcpOutcome::Unreachable { error, .. } => out.push(base(
                         Severity::Warning,
                         format!("{s}: адрес недоступен"),

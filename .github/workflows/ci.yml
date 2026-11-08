@@ -77,10 +77,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable branch, 2026-10-16
       - name: cargo-audit (built from crates.io source, locked)
         run: cargo install cargo-audit --locked --quiet
-      # Only the shipped target: Tauri's Linux-only GTK crates (glib, …) are
-      # not part of the Windows build and are not audited here.
-      - name: RustSec advisories for the Windows x64 dependency tree (vulnerabilities and unsound fail)
-        run: cargo audit --target-os windows --target-arch x86_64 --deny unsound
+      # Ignored advisories and the reasons are listed in .cargo/audit.toml.
+      - name: Linux-only GTK crates are not part of the Windows build
+        run: test -z "$(cargo tree -p network-intelligence --target x86_64-pc-windows-msvc -e normal,build -i glib 2>/dev/null)"
+      - name: RustSec advisories (vulnerabilities and unsound fail)
+        run: cargo audit --deny unsound
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
         with:
           package_json_file: apps/desktop/package.json
@@ -117,7 +118,7 @@ jobs:
       - name: clippy (whole workspace incl. Tauri app, Windows)
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Tests (whole workspace, Windows — includes real socket-table, process, icon and collector e2e tests)
-        run: cargo test --workspace -- --nocapture
+        run: cargo test --workspace --no-fail-fast -- --nocapture
       - name: Build NSIS installer
         working-directory: apps/desktop
         run: pnpm tauri build

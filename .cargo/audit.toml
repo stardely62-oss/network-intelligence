@@ -1,0 +1,8 @@
+# cargo-audit configuration.
+#
+# RUSTSEC-2024-0429 (glib 0.18, unsound VariantStrIter): glib is pulled in
+# only by Tauri's GTK backend on Linux. The shipped product is Windows-only:
+#   cargo tree -p network-intelligence --target x86_64-pc-windows-msvc -i glib
+# prints nothing. Re-evaluate if a Linux build is ever distributed.
+[advisories]
+ignore = ["RUSTSEC-2024-0429"]
