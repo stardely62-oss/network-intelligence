@@ -18,7 +18,6 @@ pub struct AppState {
     pub live: Arc<Mutex<Option<LiveStatus>>>,
     pub icons: Mutex<HashMap<String, Option<String>>>,
     pub data_dir: PathBuf,
-    pub db_path: PathBuf,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -54,7 +53,6 @@ impl AppState {
             live: Arc::new(Mutex::new(None)),
             icons: Mutex::new(HashMap::new()),
             data_dir: dir.to_path_buf(),
-            db_path,
         };
         let settings = st.settings();
         if settings.retention_days > 0 {

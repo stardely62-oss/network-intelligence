@@ -77,8 +77,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable branch, 2026-10-16
       - name: cargo-audit (built from crates.io source, locked)
         run: cargo install cargo-audit --locked --quiet
-      - name: RustSec advisories for Cargo.lock (vulnerabilities fail; unmaintained/unsound are reported)
-        run: cargo audit --deny unsound
+      # Only the shipped target: Tauri's Linux-only GTK crates (glib, …) are
+      # not part of the Windows build and are not audited here.
+      - name: RustSec advisories for the Windows x64 dependency tree (vulnerabilities and unsound fail)
+        run: cargo audit --target-os windows --target-arch x86_64 --deny unsound
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
         with:
           package_json_file: apps/desktop/package.json
