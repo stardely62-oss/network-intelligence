@@ -1,0 +1,14 @@
+[package]
+name = "ni-collector"
+description = "Network Intelligence: snapshot collection loop for a diagnostic session"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+ni-core.workspace = true
+serde.workspace = true
+
+[target.'cfg(windows)'.dev-dependencies]
+ni-windows.workspace = true

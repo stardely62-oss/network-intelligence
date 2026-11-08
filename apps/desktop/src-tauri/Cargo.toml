@@ -1,0 +1,32 @@
+[package]
+name = "network-intelligence"
+description = "Network Intelligence — network activity of Windows applications, connection diagnostics"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+name = "network_intelligence_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+ni-core.workspace = true
+ni-windows.workspace = true
+ni-probe.workspace = true
+ni-collector.workspace = true
+ni-diagnostics.workspace = true
+ni-storage.workspace = true
+ni-report.workspace = true
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+base64 = "0.22"
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]

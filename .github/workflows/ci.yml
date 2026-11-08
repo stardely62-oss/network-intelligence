@@ -1,0 +1,139 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "fix/**", "feat/**"]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    # Weekly: dependency advisories change without code changes.
+    - cron: "17 4 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  core:
+    name: Rust core (Linux) — fmt, clippy, tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable branch, 2026-10-16
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - name: rustfmt
+        run: cargo fmt --all -- --check
+      - name: clippy (core crates; the Tauri app is checked on Windows)
+        run: cargo clippy --all-targets -- -D warnings
+      - name: Tests — models, correlation, identity, collector, SQLite, probes (local servers), rules, reports
+        run: cargo test
+
+  frontend:
+    name: Frontend — typecheck, ESLint, tests, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/desktop
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+        with:
+          package_json_file: apps/desktop/package.json
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: apps/desktop/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: Config files are valid JSON
+        run: |
+          for f in src-tauri/tauri.conf.json src-tauri/capabilities/*.json package.json; do
+            node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))" && echo "ok $f"
+          done
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
+      - run: pnpm build
+
+  audit:
+    name: Dependency advisories (RustSec, npm)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable branch, 2026-10-16
+      - name: cargo-audit (built from crates.io source, locked)
+        run: cargo install cargo-audit --locked --quiet
+      - name: RustSec advisories for Cargo.lock (vulnerabilities fail; unmaintained/unsound are reported)
+        run: cargo audit --deny unsound
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+        with:
+          package_json_file: apps/desktop/package.json
+      - name: npm advisories (production dependencies, high and above)
+        working-directory: apps/desktop
+        run: pnpm audit --prod --audit-level high
+
+  windows:
+    name: Windows — clippy, tests on real IP Helper, NSIS build, smoke start
+    runs-on: windows-latest
+    needs: [core, frontend]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+        with:
+          package_json_file: apps/desktop/package.json
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: apps/desktop/pnpm-lock.yaml
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable branch, 2026-10-16
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - name: Install frontend dependencies
+        working-directory: apps/desktop
+        run: pnpm install --frozen-lockfile
+      - name: Build frontend (needed by tauri::generate_context!)
+        working-directory: apps/desktop
+        run: pnpm build
+      - name: clippy (whole workspace incl. Tauri app, Windows)
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Tests (whole workspace, Windows — includes real socket-table, process, icon and collector e2e tests)
+        run: cargo test --workspace -- --nocapture
+      - name: Build NSIS installer
+        working-directory: apps/desktop
+        run: pnpm tauri build
+      - name: Smoke start — the built app starts, stays up and creates its database
+        shell: pwsh
+        run: ./scripts/ci/smoke-start.ps1 -Exe target/release/network-intelligence.exe
+      - name: Checksums
+        shell: pwsh
+        run: |
+          $files = @(Get-ChildItem target/release/bundle/nsis/*.exe) + @(Get-Item target/release/network-intelligence.exe)
+          foreach ($f in $files) { "{0}  {1}" -f (Get-FileHash $f -Algorithm SHA256).Hash.ToLower(), $f.Name | Tee-Object -Append SHA256SUMS.txt }
+          Get-Content SHA256SUMS.txt | Out-File -Append $env:GITHUB_STEP_SUMMARY
+      - name: Upload unsigned test build (CI artifact, not a release)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: network-intelligence-windows-x64-${{ github.sha }}
+          path: |
+            target/release/bundle/nsis/*.exe
+            SHA256SUMS.txt
+          retention-days: 14
+          if-no-files-found: error

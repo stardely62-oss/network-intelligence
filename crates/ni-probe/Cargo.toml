@@ -1,0 +1,15 @@
+[package]
+name = "ni-probe"
+description = "Network Intelligence: user-initiated active checks (system DNS lookup, TCP connect, UDP request/response)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+ni-core.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+# Only to create a listener with a tiny backlog for the controlled timeout test.
+socket2 = "0.6"

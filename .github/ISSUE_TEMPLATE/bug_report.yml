@@ -1,0 +1,32 @@
+name: Ошибка
+description: Что-то работает не так
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Версия Network Intelligence и сборка Windows
+      placeholder: "0.1.0, Windows 11 23H2 (22631.4317)"
+    validations:
+      required: true
+  - type: dropdown
+    id: elevated
+    attributes:
+      label: Права
+      options: [Без прав администратора, От имени администратора]
+  - type: textarea
+    id: what
+    attributes:
+      label: Что произошло и что ожидалось
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Шаги для воспроизведения
+  - type: textarea
+    id: report
+    attributes:
+      label: Фрагмент отчёта JSON (по желанию)
+      description: Экспортируйте с включённым скрытием частных IP, путей и заметок. Публичные адреса серверов в отчёте останутся — удалите их, если не хотите их публиковать.
+      render: json

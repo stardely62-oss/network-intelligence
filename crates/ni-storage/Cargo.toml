@@ -1,0 +1,19 @@
+[package]
+name = "ni-storage"
+description = "Network Intelligence: SQLite storage of diagnostic sessions"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+ni-core.workspace = true
+ni-collector.workspace = true
+rusqlite.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+rusqlite.workspace = true

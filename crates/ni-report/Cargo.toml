@@ -1,0 +1,17 @@
+[package]
+name = "ni-report"
+description = "Network Intelligence: versioned JSON reports with redaction of sensitive data"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+ni-core.workspace = true
+ni-storage.workspace = true
+ni-diagnostics.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+ni-collector.workspace = true

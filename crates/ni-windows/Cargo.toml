@@ -1,0 +1,26 @@
+[package]
+name = "ni-windows"
+description = "Network Intelligence: Windows data sources (Toolhelp32, IP Helper socket tables, process identity, icons)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+ni-core.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+png = "0.18"
+windows-sys = { version = "0.59", features = [
+  "Win32_Foundation",
+  "Win32_Networking_WinSock",
+  "Win32_NetworkManagement_IpHelper",
+  "Win32_System_Diagnostics_ToolHelp",
+  "Win32_System_Threading",
+  "Win32_System_ProcessStatus",
+  "Win32_UI_Shell",
+  "Win32_UI_WindowsAndMessaging",
+  "Win32_Graphics_Gdi",
+  "Win32_Storage_FileSystem",
+  "Win32_Security",
+] }

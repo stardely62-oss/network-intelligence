@@ -1,0 +1,11 @@
+/target
+node_modules
+apps/desktop/dist
+apps/desktop/src-tauri/gen
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea

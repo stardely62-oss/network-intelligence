@@ -1,0 +1,11 @@
+[package]
+name = "ni-diagnostics"
+description = "Network Intelligence: rule-based diagnostic findings with explicit hypotheses and limitations"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+ni-core.workspace = true
+serde.workspace = true
